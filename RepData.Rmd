@@ -1,0 +1,155 @@
+---
+title: "RepData_PeerAssessment"
+author: "GM"
+date: "July 13, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Intro
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the "quantified self" movement -- a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
+## Data
+Data is predownloaded.
+
+The variables included in this dataset are:
+
+    steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+
+    date: The date on which the measurement was taken in YYYY-MM-DD format
+
+    interval: Identifier for the 5-minute interval in which measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+Lets extract data:
+
+```{r}
+unzip("activity.zip")
+```
+
+## Quick look
+
+```{r, echo=FALSE}
+library(scales)
+data <- read.csv(file = 'activity.csv')
+data$date<-as.Date(data$date,format="%Y-%m-%d")
+head(data)
+summary(data)
+str(data)
+```
+## Aggregate by day
+
+Aggregate and plot.
+
+```{r, echo=FALSE}
+byday<-aggregate(steps ~ date , data, sum, na.rm = TRUE)
+hist(byday$steps, col="green", main="Steps count per day distribution", xlab="Steps")
+```
+
+Data show that most probable count of steps is 10k to 15k per day (~27% probability).
+
+Mean:
+```{r, echo=FALSE}
+mean(byday$steps)
+```
+Median:
+```{r, echo=FALSE}
+median(byday$steps)
+```
+## Average daily activity
+
+```{r, echo=FALSE}
+time_series <- tapply(data$steps, data$interval, mean, na.rm = TRUE)
+plot(row.names(time_series), time_series, type = "l", xlab = "5-min interval", 
+    ylab = "Average during day", main = "Average  of steps taken", 
+    col = "green")
+
+maxsteps<-data[which.max(data$steps),]
+```
+
+Maximum steps `r maxsteps$steps` was taken on `r maxsteps$date` in 5 minutes interval.
+
+## Imputing missing values
+
+Check for miisng values
+```{r, echo=FALSE}
+miss<-mean(is.na(data$steps))
+
+```
+Looks like we have about `r label_percent()(miss)` missing data for steps.
+
+Will load library for imputing mean.
+
+```{r, echo=FALSE}
+library(Hmisc)
+new_data<-data
+summary(new_data)
+new_data$steps<- with(new_data, impute(new_data$steps, mean))
+summary(new_data)
+
+```
+
+```{r, echo=FALSE}
+miss_new<-mean(is.na(new_data$steps))
+```
+No more missing data
+
+Lets plot it:
+```{r, echo=FALSE}
+new_byday<-aggregate(steps ~ date , new_data, sum, na.rm = TRUE)
+hist(byday$steps, col="green", main="Steps count per day distribution", xlab="Steps")
+```
+
+Mean:
+```{r, echo=FALSE}
+mean(new_byday$steps)
+mean(new_byday$steps)==mean(new_byday$steps)
+```
+Median:
+```{r, echo=FALSE}
+median(new_byday$steps)
+median(new_byday$steps)==mean(byday$steps)
+```
+
+Mean and median did not changed with imputed mean values.
+
+##Are there differences in activity patterns between weekdays and weekends?
+
+We need to separate weekend from weekdays:
+
+```{r, echo=FALSE}
+wd <- function(d) {
+    weekday <- weekdays(as.Date(d, '%Y-%m-%d'))
+    if  (!(weekday == 'Saturday' || weekday == 'Sunday')) {
+        d <- 'Weekday'
+    } else {
+        d <- 'Weekend'
+    }
+    d
+}
+```
+
+Create new column in data:
+
+```{r, echo=FALSE}
+new_data$daytype <- as.factor(sapply(new_data$date, wd))
+```
+
+Aggregate and plot:
+
+```{r, echo=FALSE}
+byint_bywd <- aggregate(steps ~ interval+daytype,new_data , mean)
+
+plt <- ggplot(byint_bywd, aes(interval, steps)) +
+    geom_line(stat = "identity", aes(colour = daytype)) +
+    theme_gray() +
+    labs(x="5 min interval", y=expression("Total Steps per interval")) +
+    ggtitle("Average of steps taken per interval")
+print(plt)
+```
+On weekend activity starts later (need to get that sweet morningsleep) and it is less intensive than on weekdays. Middle of the day on weekends is more active. 
