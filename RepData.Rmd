@@ -2,7 +2,9 @@
 title: "RepData_PeerAssessment"
 author: "GM"
 date: "July 13, 2020"
-output: html_document
+output: 
+  html_document:
+    keep_md: true 
 ---
 
 ```{r setup, include=FALSE}
