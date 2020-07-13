@@ -76,7 +76,7 @@ Maximum steps `r maxsteps$steps` was taken on `r maxsteps$date` in 5 minutes int
 
 ## Imputing missing values
 
-Check for miisng values
+Check for missing values
 ```{r, echo=FALSE}
 miss<-mean(is.na(data$steps))
 
@@ -152,4 +152,4 @@ plt <- ggplot(byint_bywd, aes(interval, steps)) +
     ggtitle("Average of steps taken per interval")
 print(plt)
 ```
-On weekend activity starts later (need to get that sweet morningsleep) and it is less intensive than on weekdays. Middle of the day on weekends is more active. 
+On weekend activity starts later (need to get that sweet morning sleep) and it is less intensive than on weekdays. Middle of the day on weekends is more active. 
